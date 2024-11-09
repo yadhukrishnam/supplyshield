@@ -1,0 +1,27 @@
+[tool.black]
+line-length = 100
+include = '\.pyi?$'
+#skip_gitignore = true
+# 'extend-exclude' excludes files or directories in addition to the defaults
+extend-exclude = '''
+(
+   ^/venv/.*
+)
+'''
+
+[tool.isort]
+profile = "black"
+line_length = 100
+force_single_line = true
+skip = ["venv", "scans"]
+
+[tool.ruff]
+line-length = 100
+ignore-init-module-imports = true
+
+[tool.ruff.isort]
+force-single-line = true
+
+[tool.ruff.per-file-ignores]
+"alembic/versions/*.py" = ["F401"]
+"__init__.py" = ["F401"]

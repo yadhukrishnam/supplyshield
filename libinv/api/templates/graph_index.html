@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blast Radius for {{ package }}</title>
+    <style>
+        /* Define colors and styles for the legend */
+        .color-legend {
+            display: flex;
+            gap: 20px; /* Add gap between legend items */
+            font-family: Arial, sans-serif;
+            height: 20px;
+            width: 100%;
+            padding: 10px
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            font-size: 14px;
+        }
+
+        .color-box {
+            width: 20px;
+            height: 20px;
+            border: 1px solid #000;
+            margin-right: 10px;
+        }
+
+        /* Define colors for the legend items */
+        .color1 { background-color: #ff0000; }
+        .color2 { background-color: #ffd300; }
+        .color3 { background-color: #14452f; }
+        /* Add more colors and classes as needed */
+
+        /* Additional styles */
+        body {
+            margin: 0px;
+            padding: 0px;
+        }
+
+        iframe {
+            width: 100%;
+            height: 100vh;
+            border: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="color-legend">
+        <!-- Define legend items with color boxes and labels -->
+        <div class="legend-item">
+            <p>Legend: </p>
+        </div>
+
+        <div class="legend-item">
+            <div class="color-box color1"></div>
+            <div>Vulnerable Package / Child Package</div>
+        </div>
+        <div class="legend-item">
+            <div class="color-box color2"></div>
+            <div>Org Projects</div>
+        </div>
+        <div class="legend-item">
+            <div class="color-box color3"></div>
+            <div>Parent Package</div>
+        </div>
+    </div>
+    <iframe scrolling="no" src=""></iframe>
+    <script>
+        function get_parameter(){
+            let url = new URL(document.location.href);
+            let project_name = url.searchParams.get("project_name");
+            let child_package = url.searchParams.get("child_package");
+            return [project_name, child_package];
+        }
+
+        let [project_name, child_package] = get_parameter();
+        
+        if (!project_name || !child_package){
+            document.getElementsByTagName("iframe")[0].srcdoc = "<h1>Invalid project</h1>"
+        } else { 
+            let href = `${document.location.origin}/blastradius/generate_graph?project_name=${project_name}&child_package=${child_package}`;
+            document.getElementsByTagName("iframe")[0].src = href;
+        }
+        
+    </script>
+</body>
+</html>

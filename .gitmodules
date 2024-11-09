@@ -1,0 +1,3 @@
+[submodule "scancodeio"]
+	path = scancodeio
+	url = git@github-personal:supplyshield/scancodeio.git

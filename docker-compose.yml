@@ -1,0 +1,88 @@
+services:
+  db:
+    image: postgres:15.5
+    env_file:
+      - docker.env
+    volumes:
+      - ./alembic/data/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - db_data:/var/lib/postgresql/data
+    shm_size: "1gb"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U scancodeio"]
+      interval: 10s
+      retries: 5
+    restart: always
+  
+  crons:
+    build:
+      dockerfile: Dockerfile.crons
+    env_file:
+      - docker.env
+    depends_on:
+      - db
+    restart: always
+
+  scancodeio:
+    build:
+      context: ./scancodeio/
+      dockerfile: Dockerfile
+    command: wait-for-it --strict --timeout=60 db:5432 -- sh -c "
+        ./manage.py migrate &&
+        ./manage.py collectstatic --no-input --verbosity 0 --clear &&
+        gunicorn scancodeio.wsgi:application --bind :8000 --timeout 600 --workers 8"
+    env_file:
+      - docker.env
+    ports:
+      - "8002:8000"
+    depends_on:
+      - db
+      - crons
+    volumes:
+      - static:/var/scancodeio/static/
+  
+  web:
+    build:
+      dockerfile: Dockerfile
+    env_file:
+      - docker.env
+    ports:
+      - "8000:5000"
+    depends_on:
+      - scancodeio
+
+  metabase:
+    image: metabase/metabase:latest
+    container_name: metabase
+    hostname: metabase
+    volumes:
+      - /dev/urandom:/dev/random:ro
+    ports:
+      - 3000:3000
+    environment:
+      MB_DB_TYPE: postgres
+      MB_DB_DBNAME: scancodeio
+      MB_DB_PORT: 5432
+      MB_DB_USER: scancodeio
+      MB_DB_PASS: 
+      MB_DB_HOST: db
+    healthcheck:
+      test: curl --fail -I http://localhost:3000/api/health || exit 1
+      interval: 15s
+      timeout: 5s
+      retries: 5
+    depends_on:
+      - db
+
+  daemon:
+    build:
+      dockerfile: Dockerfile.daemon
+    env_file:
+      - docker.env
+    expose:
+      - "8001:8000"
+    depends_on:
+      - crons
+
+volumes:
+  static:
+  db_data:

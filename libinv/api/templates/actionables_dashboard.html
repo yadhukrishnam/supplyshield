@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Actionable Dashboard</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+        integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
+</head>
+<style>
+    .green {
+        background-color: aquamarine;
+    }
+
+    td {
+        width: 100px;
+        white-space: nowrap;
+    }
+
+    td:last-child {
+        display: none;
+    }
+
+    .i_am_vulnerable {
+        background-color: tomato !important;
+    }
+
+    .upgrade_me {
+        background-color: aquamarine !important;
+        ;
+    }
+
+    .navbar-brand {
+        margin-left: 20px;
+    }
+
+    .logo{
+       color: #34a853;
+    }
+</style>
+
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="row">
+            <div class="col-md-12">
+                <a class="navbar-brand" href="#"><b class="logo">SupplyShield</b> Actionables Dashboard</a>
+            </div>
+        </div>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item active">
+                    <a class="nav-link" href="#">Home</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#">FAQ</a>
+                </li>
+            </ul>
+        </div>
+    </nav>
+    <div class="container-fluid">
+        <div class="alert alert-primary mt-3" role="alert">
+            <i>You are currently viewing results for <a href="https://{{repository.provider}}/{{ repository.org }}/{{repository.name}}">{{ repository.name}}</a> on {{selected_env}} environment. (pod: {{repository.pod}})</i>
+        </div>
+        {% if no_actionables %}
+            <div class="card mt-3">
+                <div class="card-header bg-dark text-white">
+                    Thanks for checking!
+                </div>
+                <div class="card-body">
+                        <p>It seems like there are no actionables detected for the selected repository. Please come back later or check other repositories you own.</p>
+                </div>
+            </div>
+        {% else %}
+            <div class="card mt-3">
+                <div class="card-header bg-dark text-white">
+                    Which vulnerable package do you want to fix today?
+                </div>
+                <div class="card-body">
+                    <form action="/actionable/fix" method="GET">
+                        <div class="form-group">
+                            <input type="hidden" name="repository_id" value="{{repository.id}}" />
+                            <input type="hidden" name="env" value="{{selected_env}}" />
+                            <select id="vulnerable_package" name="vulnerable_package" class="form-control mt-2">
+                                <option selected value="not-selected">See all</option>
+                                {% for package in vulnerable_packages %}
+                                <option {% if package.id == selected_package %} selected {% endif %} value="{{ package.id }}">{{
+                                    package[1] }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="form-group mt-3">
+                            <input type="checkbox" name="show_paths" value="true"> Show paths through which the selected vulnerable package was introduced. Check this only if you need an in-depth understanding.
+                        </div>
+                        <button type="submit" class="btn btn-primary mt-3">See my actionables</button>
+                        <!-- <input type="button" class="btn btn-secondary mt-3" style="cursor:not-allowed;" value="See common library actionables"/> -->
+                    </form>
+                </div>
+            </div>
+            {% if actionables %}
+                <h3 class="mt-3">Your actionables ({{ actionables | length }}):</h3>
+                <div class="alert alert-warning" role="alert">
+                    <p>Upgrade the following to latest version: </p>
+                    <ol>
+                        {% for actionable in actionables %}
+                        <li> {{ actionable }}</li>
+                        {% endfor %}
+                    </ol>
+                </div>
+            {% endif %}
+            {% if non_commons_paths %}
+                <hr />
+                <h3>Paths ({{ non_commons_paths | length }})</h3>
+                <br />
+                {% if selected_package_purl %}
+                    <div class="alert alert-info" role="alert">
+                        <ul>
+                            <li>The following section denotes different paths in which <code>{{ selected_package_purl[1] }}</code> is being imported and used.</li>
+                            <li>Your action item is to upgrade all the first level packages that caused import of
+                                <code>{{ selected_package_purl[1] }}</code>.
+                            </li>
+                        </ul>
+                    </div>
+                    <table class="table  table-hover">
+                        {% for path in non_commons_paths %}
+                        <tr>
+                            {% for purl in path %}
+                                {% if purl == selected_package_purl[1] %}
+                                    <td class="i_am_vulnerable">{{ purl }}</td>
+                                {% elif purl in list_of_actionables %}
+                                    <td class="upgrade_me">{{ purl }}</td>
+                                {% else %}
+                                    <td>{{ purl }}</td>
+                                {% endif %}
+                                    <td> > </td>
+                            {% endfor %}
+                        </tr>
+                        {% endfor %}
+                    </table>
+                {% endif %}
+            {% endif %}
+        {% endif %}
+    </div>
+</body>
+</html>

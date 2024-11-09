@@ -1,0 +1,39 @@
+name: Test Coverage
+
+on:
+  pull_request:
+    branches:
+      - master  
+
+jobs:
+  test:
+    runs-on: [self-hosted, linux, x64, codeql]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.head_ref }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.10'  
+
+      - name: Install Build Tools
+        run: |
+          sudo add-apt-repository ppa:deadsnakes/ppa
+          sudo apt-get update
+          sudo apt-get install -y tree unzip zip python3-pip build-essential ca-certificates curl wget nodejs gnupg lsb-release libpq-dev git postgresql-client jq wait-for-it --no-install-recommends 
+          
+      - name: Install python dependencies
+        run: |
+          make python-deps-dev
+      
+      - name: Run tests with coverage
+        run: |
+          make coverage
+      
+      - name: Generate coverage report
+        run: |
+          coverage report

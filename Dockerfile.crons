@@ -1,0 +1,40 @@
+FROM python:3.10-buster
+
+WORKDIR /app
+# hadolint ignore=DL3008,DL4006
+RUN curl -fsSL https://deb.nodesource.com/setup_current.x | bash -
+RUN apt-get update && \
+    apt-get install -y python3 \
+    unzip \
+    zip \
+    python3-pip \
+    python3-dev \
+    default-libmysqlclient-dev \
+    build-essential \
+    ca-certificates \
+    curl \
+    wget \
+    nodejs \
+    gnupg \
+    lsb-release \
+    libpq-dev \
+    git \
+    postgresql-client \ 
+    jq \
+    wait-for-it \
+    --no-install-recommends \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* && \
+    npm install npm@latest -g
+EXPOSE 8000
+# copying all files required to install
+COPY /etc ./etc
+COPY requirements.txt pyproject.toml pylintrc setup.cfg Makefile ./
+COPY /libinv/cli/cli.py ./libinv/cli/
+COPY /libinv/logger.py /libinv/__init__.py ./libinv/
+RUN make python-deps-dev
+USER root
+RUN pip install --no-cache-dir --upgrade boto3 Jinja2 MarkupSafe
+# copy all files
+COPY . .
+CMD ["make","crons"]
